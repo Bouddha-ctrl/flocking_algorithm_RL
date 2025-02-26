@@ -11,7 +11,7 @@ class Prey(Boid):
     SEPARATION_DISTANCE = 30
 
     SEPERATION_COEFFICIENT = 0.6
-    ESCAPE_COEFFICIENT = 0.8
+    ESCAPE_COEFFICIENT = 1
     ALIGNMENT_COEFFICIENT = 0.01
     COHESION_COEFFICIENT = 0.0005
 
@@ -24,14 +24,16 @@ class Prey(Boid):
     def escapePredators(self, flock):
         average_separation = pygame.Vector2(0, 0)
         for other in flock:
-            if other == self:
+            if other == self or self.isSafe(other):
                 continue
 
             if not self.isSafe(other):
                 distance = super().distance_to(other)
                 if distance < self.PERCEPTION_RADIUS:
-                    average_separation += other.velocity
-        return - average_separation * self.ESCAPE_COEFFICIENT
+                    diff = self.position - other.position
+                    diff.scale_to_length(1 / distance)
+                    average_separation += diff
+        return average_separation * self.ESCAPE_COEFFICIENT
 
 
     def separation(self, flock):
