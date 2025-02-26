@@ -1,16 +1,17 @@
-
 import pygame
 import random
 import math
 import pygame
 from boid import Boid
+from predator import Predator
 
 class Prey(Boid):
-    MAX_SPEED = .7
+    MAX_SPEED = .5
     PERCEPTION_RADIUS = 50
     SEPARATION_DISTANCE = 30
 
     SEPERATION_COEFFICIENT = 0.6
+    ESCAPE_COEFFICIENT = 0.8
     ALIGNMENT_COEFFICIENT = 0.01
     COHESION_COEFFICIENT = 0.0005
 
@@ -19,14 +20,27 @@ class Prey(Boid):
         self.position = pygame.Vector2(x, y)
         self.velocity = pygame.Vector2(random.uniform(-1, 1), random.uniform(-1, 1))
         self.velocity.scale_to_length(self.MAX_SPEED)
-
-    def separation(self, flock):
+    
+    def escapePredators(self, flock):
         average_separation = pygame.Vector2(0, 0)
         for other in flock:
             if other == self:
                 continue
 
-            distance = self.distance_to(other)
+            if not self.isSafe(other):
+                distance = super().distance_to(other)
+                if distance < self.PERCEPTION_RADIUS:
+                    average_separation += other.velocity
+        return - average_separation * self.ESCAPE_COEFFICIENT
+
+
+    def separation(self, flock):
+        average_separation = pygame.Vector2(0, 0)
+        for other in flock:
+            if other == self or not self.isSafe(other):
+                continue
+
+            distance = super().distance_to(other)
             if distance < self.SEPARATION_DISTANCE and distance > 0:
                 diff = self.position - other.position
                 diff.scale_to_length(1 / distance)
@@ -37,10 +51,10 @@ class Prey(Boid):
         average_velocity = pygame.Vector2(0, 0)
         num_neighbors = 0
         for other in flock:
-            if other == self:
+            if other == self or not self.isSafe(other):
                 continue
 
-            if self.distance_to(other) < self.PERCEPTION_RADIUS:
+            if super().distance_to(other) < self.PERCEPTION_RADIUS:
                 average_velocity += other.velocity
                 num_neighbors += 1
         if num_neighbors > 0:
@@ -51,10 +65,10 @@ class Prey(Boid):
         average_position = pygame.Vector2(0, 0)
         num_neighbors = 0
         for other in flock:
-            if other == self:
+            if other == self or not self.isSafe(other):
                 continue
 
-            if self.distance_to(other) < self.PERCEPTION_RADIUS:
+            if super().distance_to(other) < self.PERCEPTION_RADIUS:
                 average_position += other.position
                 num_neighbors += 1
         if num_neighbors > 0:
@@ -73,15 +87,19 @@ class Prey(Boid):
         pygame.draw.line(screen, (255, 255, 255), (self.position.x, self.position.y), (end_x, end_y), 2)
         pygame.draw.circle(screen, (255, 255, 255), (int(self.position.x), int(self.position.y)), 3)
 
+    def isSafe(self, boid):
+        return type(boid) == self.__class__
+    
     def update(self, flock, WIDTH, HEIGHT):
         separation = self.separation(flock)
         alignment = self.alignment(flock)
         cohesion = self.cohesion(flock)
+        escape = self.escapePredators(flock)
 
-        self.velocity += alignment + cohesion + separation
+        self.velocity += alignment + cohesion + separation + escape
         self.velocity.scale_to_length(self.MAX_SPEED)
 
         self.position += self.velocity
-        self.wrap_edges(WIDTH, HEIGHT)
+        super().wrap_edges(WIDTH, HEIGHT)
 
     

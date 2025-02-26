@@ -32,7 +32,7 @@ def main():
         screen.fill(BLACK)
         copied_flock = list(map(lambda x: copy.deepcopy(x), flock))
         for entity in copied_flock:
-            entity.update(preys, WIDTH, HEIGHT)
+            entity.update(flock, WIDTH, HEIGHT)
             entity.draw(screen)
 
         flock = copied_flock
