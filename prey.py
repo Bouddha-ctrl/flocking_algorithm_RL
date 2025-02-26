@@ -3,7 +3,6 @@ import random
 import math
 import pygame
 from boid import Boid
-from predator import Predator
 
 class Prey(Boid):
     MAX_SPEED = .5
@@ -11,11 +10,12 @@ class Prey(Boid):
     SEPARATION_DISTANCE = 30
 
     SEPERATION_COEFFICIENT = 0.6
-    ESCAPE_COEFFICIENT = 1
+    ESCAPE_COEFFICIENT = 1.2
     ALIGNMENT_COEFFICIENT = 0.01
     COHESION_COEFFICIENT = 0.0005
 
     def __init__(self, x, y):
+        super().__init__()
         self.flag = random.uniform(0, 10) < .5
         self.position = pygame.Vector2(x, y)
         self.velocity = pygame.Vector2(random.uniform(-1, 1), random.uniform(-1, 1))
@@ -34,6 +34,14 @@ class Prey(Boid):
                     diff.scale_to_length(1 / distance)
                     average_separation += diff
         return average_separation * self.ESCAPE_COEFFICIENT
+    
+    def checkForPredator(self, flock):
+        for other in flock:
+            if super().isSame(other) or self.isSafe(other):
+                continue
+
+            if self.distance_to(other) < other.SEPARATION_DISTANCE:
+                super().setToDeath()
 
 
     def separation(self, flock):
@@ -90,13 +98,18 @@ class Prey(Boid):
         pygame.draw.circle(screen, (255, 255, 255), (int(self.position.x), int(self.position.y)), 3)
 
     def isSafe(self, boid):
-        return type(boid) == self.__class__
+        return type(boid) == Prey
     
     def update(self, flock, WIDTH, HEIGHT):
+        if not super().isAlive():
+            return
+        self.checkForPredator(flock)
+
         separation = self.separation(flock)
         alignment = self.alignment(flock)
         cohesion = self.cohesion(flock)
         escape = self.escapePredators(flock)
+        
 
         self.velocity += alignment + cohesion + separation + escape
         self.velocity.scale_to_length(self.MAX_SPEED)
