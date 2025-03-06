@@ -9,6 +9,8 @@ class Predator(Boid):
     PERCEPTION_RADIUS = 85
     SEPARATION_DISTANCE = 30
     killedPreyCount = 0
+    prey_indicator = 0
+    predator_indicator = 1
 
     def __init__(self, x, y):
         super().__init__()
@@ -48,6 +50,34 @@ class Predator(Boid):
         self.position += self.velocity
         self.wrap_edges(WIDTH, HEIGHT)
 
+    def turn(self, level): # for the RL
+        if level == 0:
+            return
+        
+        angle_degrees = level * 30
+        angle_rad = math.radians(angle_degrees)
+        new_vx = self.velocity.x * math.cos(angle_rad) - self.velocity.y * math.sin(angle_rad)
+        new_vy = self.velocity.x * math.sin(angle_rad) + self.velocity.y * math.cos(angle_rad)
+        self.velocity = pygame.Vector2(new_vx, new_vy)
+
+    def getPredatorsInVision(self, flock):
+        observation = []
+        for predator in flock:
+            if self != predator:
+                continue
+            if super().distance_to(predator) < self.PERCEPTION_RADIUS and type(predator) != Predator:
+                rel_velocity = predator.velocity - self.velocity
+                observation += rel_velocity.x, rel_velocity.y, self.prey_indicator
+        return observation
+    
+    def getPreyInVision(self, flock):
+        observation = []
+        for prey in flock:
+            if super().distance_to(prey) < self.PERCEPTION_RADIUS and type(prey) != Prey:
+                rel_velocity = prey.velocity - self.velocity
+                observation += rel_velocity.x, rel_velocity.y, self.prey_indicator
+        return observation
+    
     def draw(self, screen):
         if self.flag:
             pygame.draw.circle(screen, 'blue', (int(self.position.x), int(self.position.y)), self.PERCEPTION_RADIUS, width=1)

@@ -116,5 +116,3 @@ class Prey(Boid):
 
         self.position += self.velocity
         super().wrap_edges(WIDTH, HEIGHT)
-
-    
