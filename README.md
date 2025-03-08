@@ -18,6 +18,8 @@ c. **Separation**: Each prey maintains a certain distance from nearby preys to a
 
 This results in an emergent, natural-looking swarm behavior.
 
+![Flocking Behavior](md_resource/animation.gif)
+
 ## Custom Environment: Introducing a Predator
 
 To create a more dynamic environment, a predator was introduced into the system. The key modifications include:
