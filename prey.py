@@ -14,10 +14,10 @@ class Prey(Boid):
     ALIGNMENT_COEFFICIENT = 0.01
     COHESION_COEFFICIENT = 0.0005
 
-    def __init__(self, x, y):
+    def __init__(self, WIDTH, HEIGHT):
         super().__init__()
         self.flag = random.uniform(0, 10) < .5
-        self.position = pygame.Vector2(x, y)
+        self.position = pygame.Vector2(random.randint(0, WIDTH), random.randint(0, HEIGHT))
         self.velocity = pygame.Vector2(random.uniform(-1, 1), random.uniform(-1, 1))
         self.velocity.scale_to_length(self.MAX_SPEED)
     

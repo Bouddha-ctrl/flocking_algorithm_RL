@@ -12,34 +12,22 @@ class Predator(Boid):
     prey_indicator = 0
     predator_indicator = 1
 
-    def __init__(self, x, y):
+    def __init__(self, WIDTH, HEIGHT):
         super().__init__()
         self.flag = random.uniform(0, 10) < 5
-        self.position = pygame.Vector2(x, y)
+        self.position = pygame.Vector2(random.randint(0, WIDTH), random.randint(0, HEIGHT))
         self.velocity = pygame.Vector2(random.uniform(-1, 1), random.uniform(-1, 1))
         self.velocity.scale_to_length(self.MAX_SPEED)
-
-    def colision(self, flock):
-        for other in flock:
-            if super().isSame(other) or type(other) != Predator:
-                continue
-
-            if self.distance_to(other) < self.SEPARATION_DISTANCE:
-                return True
-        return False
     
     def checkForPrey(self, flock):
         for other in flock:
             if super().isSame(other) or type(other) != Prey:
                 continue
 
-            if self.distance_to(other) < self.SEPARATION_DISTANCE:
+            if other.isAlive() and self.distance_to(other) < self.SEPARATION_DISTANCE:
                 self.killedPreyCount += 1
 
     def update(self, flock, WIDTH, HEIGHT):
-        if self.colision(flock):
-            return super().setToDeath()
-        
         self.checkForPrey(flock)
         
         newVelocity = pygame.Vector2(random.uniform(-1, 1), random.uniform(-1, 1))
@@ -51,6 +39,10 @@ class Predator(Boid):
         self.wrap_edges(WIDTH, HEIGHT)
 
     def turn(self, level): # for the RL
+        if level not in [-2, -1, 0, 1, 2]:
+            print("Invalid action: {}".format(level))
+            return
+        
         if level == 0:
             return
         
@@ -59,25 +51,24 @@ class Predator(Boid):
         new_vx = self.velocity.x * math.cos(angle_rad) - self.velocity.y * math.sin(angle_rad)
         new_vy = self.velocity.x * math.sin(angle_rad) + self.velocity.y * math.cos(angle_rad)
         self.velocity = pygame.Vector2(new_vx, new_vy)
-
-    def getPredatorsInVision(self, flock):
-        observation = []
-        for predator in flock:
-            if self != predator:
-                continue
-            if super().distance_to(predator) < self.PERCEPTION_RADIUS and type(predator) != Predator:
-                rel_velocity = predator.velocity - self.velocity
-                observation += rel_velocity.x, rel_velocity.y, self.prey_indicator
-        return observation
     
     def getPreyInVision(self, flock):
-        observation = []
+        closePreys = []
         for prey in flock:
-            if super().distance_to(prey) < self.PERCEPTION_RADIUS and type(prey) != Prey:
-                rel_velocity = prey.velocity - self.velocity
-                observation += rel_velocity.x, rel_velocity.y, self.prey_indicator
+            if prey.isAlive() and super().distance_to(prey) < self.PERCEPTION_RADIUS:
+                closePreys.append(prey)
+        return closePreys
+    
+    def getObservation(self, flock):
+        preys = self.getPreyInVision(flock)
+        observation = {}
+        for prey in preys:
+            rel_velocity = prey.velocity - self.velocity
+            relativePostion = super().distance_to(prey)
+            observation[prey.id] = rel_velocity.x, rel_velocity.y, relativePostion, 1
         return observation
     
+
     def draw(self, screen):
         if self.flag:
             pygame.draw.circle(screen, 'blue', (int(self.position.x), int(self.position.y)), self.PERCEPTION_RADIUS, width=1)
@@ -89,3 +80,6 @@ class Predator(Boid):
         end_y = self.position.y - length * math.sin(angle)
         pygame.draw.line(screen, (255, 255, 255), (self.position.x, self.position.y), (end_x, end_y), 2)
         pygame.draw.circle(screen, "red", (int(self.position.x), int(self.position.y)), 3)
+
+    def fitness(self):
+        return self.killedPreyCount * 10

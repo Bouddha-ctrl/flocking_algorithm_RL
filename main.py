@@ -5,8 +5,8 @@ import copy
 from prey import Prey
 from predator import Predator
 
-PREY_NUM = 100
-PREDATOR_NUM = 10
+PREY_NUM = 10
+PREDATOR_NUM = 1
 BLACK = (0, 0, 0)
 WIDTH, HEIGHT = 1500, 1100
 
@@ -25,7 +25,7 @@ def main(iterationNumber):
     while iteration < iterationNumber and not intercepted and not noMorePredators:
         iteration+=1
 
-        if iteration%10 == 0:
+        if iteration%1_000 == 0:
             log(iteration, flock)
 
         
@@ -53,8 +53,8 @@ def main(iterationNumber):
     pygame.quit()
 
 def init_population():
-    preys = [Prey(random.randint(0, WIDTH), random.randint(0, HEIGHT)) for _ in range(PREY_NUM)]
-    predators = [Predator(random.randint(0, WIDTH), random.randint(0, HEIGHT)) for _ in range(PREDATOR_NUM)]
+    preys = [Prey(WIDTH, HEIGHT) for _ in range(PREY_NUM)]
+    predators = [Predator(WIDTH,HEIGHT) for _ in range(PREDATOR_NUM)]
     return predators + preys
 
 
